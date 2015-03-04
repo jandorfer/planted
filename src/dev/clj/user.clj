@@ -21,7 +21,7 @@
 
 (defn reset []
   (stop)
-  (start))
+  (go))
 
 (defn full-reset []
   (stop)
