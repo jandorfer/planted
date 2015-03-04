@@ -12,12 +12,11 @@
         db-admin-pwd (get-in config-options [:db-admin-pwd] nil)
         bind (Integer. (get-in config-options [:bind] 8080))]
     (log/info "Starting up Planted system...")
-    (->
-      (component/system-map
-        :db (new-database db-url db-admin-user db-admin-pwd)
-        :ws (new-webserver bind))
-      (component/system-using
-        {:ws {:database :db}}))))
+    (-> (component/system-map
+          :db (new-database db-url db-admin-user db-admin-pwd)
+          :ws (new-webserver bind))
+        (component/system-using
+          {:ws [:db]}))))
 
 (defn -main [& args]
   (let [system (component/start (planted config/env))]
