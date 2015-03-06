@@ -11,12 +11,24 @@
 (deftest test-app
   (let [system (component/start (planted config/env))]
 
-    (testing "Planted Home"
-      (let [response (http/get (build-url "planted") {:throw-exceptions false})]
+    (testing "Planted Home Page"
+      (let [response (http/get (build-url "") {:throw-exceptions false})]
         (is (= (:status response) 200))))
 
-    (testing "Missing Resource"
-      (let [response (http/get (build-url "resource/missing") {:throw-exceptions false})]
+    (testing "Deeper Link"
+      (let [response (http/get (build-url "plant/abc123") {:throw-exceptions false})]
+        (is (= (:status response) 200))))
+
+    (testing "Missing Resource (js)"
+      (let [response (http/get (build-url "js/missing") {:throw-exceptions false})]
+        (is (= (:status response) 404))))
+
+    (testing "Missing Resource (css)"
+      (let [response (http/get (build-url "css/missing") {:throw-exceptions false})]
+        (is (= (:status response) 404))))
+
+    (testing "Missing Resource (img)"
+      (let [response (http/get (build-url "img/missing") {:throw-exceptions false})]
         (is (= (:status response) 404))))
 
     (component/stop system)))

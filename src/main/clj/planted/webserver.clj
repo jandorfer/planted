@@ -8,7 +8,7 @@
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.not-modified :refer [wrap-not-modified]]
             [ring.middleware.params :refer [wrap-params]]
-            [ring.util.response :refer [content-type resource-response]]))
+            [ring.util.response :refer [content-type resource-response status]]))
 
 (defn log-request
   "Logs the request details, the start/end time and any exceptions"
@@ -23,6 +23,8 @@
       (catch Throwable t
         (log/error t "Unhandled throwable")
         (throw t)))))
+
+(def app-html "public/planted.html")
 
 (defn setup-web-server
   "Defines the Planted web server, which includes the REST web services and
@@ -44,9 +46,17 @@
     ;; appropriately. An easy way to redirect deep links to the single html
     ;; page is to simply capture anything that falls through from above.
     ;; The single page app itself can gracefully handle actual 404s.
+
+    ;; TODO prerender the javascript app server side so we know for sure
+    (GET "/" [] (resource-response app-html))
+    (GET ["/:_" :_ #"(plant|site).*"] [_] (resource-response app-html))
+
+    ;; Certain paths really should return 404 status, but still send along
+    ;; the single page app; it can render the 404 message.
     (route/not-found
-      ;; TODO prerender the javascript app server side
-      (content-type (resource-response "public/planted.html") "text/html"))))
+      (-> app-html
+          resource-response
+          (content-type "text/html")))))
 
 (defn wrap-web-server
   "Initializes the application web request handling and initializes some other
