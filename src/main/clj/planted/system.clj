@@ -3,7 +3,7 @@
   (:require [clojure.tools.logging :as log]
             [com.stuartsierra.component :as component]
             [environ.core :as config]
-            [planted.db :refer [new-database]]
+            [planted.db.core :refer [new-database]]
             [planted.webserver :refer [new-webserver]]))
 
 (defn planted [config-options]
