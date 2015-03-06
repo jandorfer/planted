@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [com.stuartsierra.component :as component]
             [environ.core :as config]
-            [planted.db.schema :as dbs]
+            [planted.db.core :refer [create search]]
             [planted.system :refer [planted]]))
 
 (deftest test-app
@@ -10,12 +10,11 @@
         db (get-in system [:db :db])]
 
     (testing "Create and use Plant type"
-      (dbs/create-plant-class db)
-      (dbs/create-plant db "Plant1" true)
-      (dbs/create-plant db "Plant2" true)
-      (dbs/create-plant db "Plant3" false)
-      (let [results-living (dbs/get-plants db "living" true)
-            results-dead (dbs/get-plants db "living" false)]
+      (create db "Plant" {:title "Plant1" :living true})
+      (create db "Plant" {:title "Plant2" :living true})
+      (create db "Plant" {:title "Plant3" :living false})
+      (let [results-living (search db "living" true)
+            results-dead (search db "living" false)]
         (is (= (count results-living) 2))
         (is (= (count results-dead) 1))
         (is (= (.getProperty (first results-dead) "title") "Plant3"))))

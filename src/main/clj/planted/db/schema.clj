@@ -1,7 +1,31 @@
 (ns planted.db.schema
-  (:require [planted.db.core :refer [deftx]])
-  (:import [com.tinkerpop.blueprints.impls.orient OrientVertexType OrientVertex]
+  (:require [clojure.tools.logging :as log])
+  (:import [com.tinkerpop.blueprints.impls.orient OrientGraphFactory OrientGraph OrientVertexType]
            [com.orientechnologies.orient.core.metadata.schema OType]))
+
+(defn- init-vertex-type
+  "Creates a vertex type definition in the database if not present."
+  [^OrientGraphFactory db type parent properties]
+  (let [graph (.getNoTx db)]
+    (if-let [existing-type (.getVertexType graph type)]
+      existing-type
+      (do (log/info "Creating vertex type:" type)
+          (let [otype (.createVertexType graph type parent)]
+            (doseq [[prop ptype] (seq properties)]
+              (log/debug type "- Creating property" prop "with data type" ptype)
+              (.createProperty otype (name prop) ptype)))
+          type))))
+
+(defn init-schema
+  "Takes a map of schema definitions, and ensures the indicated types exist in
+  the database."
+  [^OrientGraphFactory db schema]
+  (let [vertex-types (:vertex-types schema)
+        edge-types (:edge-types schema)]
+    (doseq [{:keys [name parent properties]} vertex-types]
+      (init-vertex-type db name parent properties))
+    (doseq [{:keys [name parent properties]} edge-types]
+      (log/warn "TODO: Edges not implemented."))))
 
 ;; The Planted schema is designed around the Plant as the primary record, since
 ;; we are after all tracking plants. Since we're using a graph database
@@ -15,19 +39,15 @@
 ;; - health (0-10?)
 ;; Users can and are encouraged to make up their own properties.
 
-(deftx create-plant-class [graph]
-  (let [^OrientVertexType type (.createVertexType graph "Plant" "V")]
-    (.createProperty type "title" (OType/STRING))
-    (.createProperty type "planted" (OType/DATE))
-    (.createProperty type "living" (OType/BOOLEAN))))
+(def plant
+  {:name "Plant"
+   :parent "V"
+   :properties {:title OType/STRING
+                :planted OType/DATE
+                :living OType/BOOLEAN}})
 
-(deftx create-plant [graph title living]
-  (let [^OrientVertex plant (.addVertex graph "class:Plant")]
-    (.setProperties plant (to-array ["title" title "living" living]))
-    plant))
-
-(deftx get-plants [graph param value]
-  (into [] (.getVertices graph param value)))
+(def planted-schema
+  {:vertex-types [plant]})
 
 ;; The other main thing to start are "Report"s for a given plant. This is how we
 ;; go about adding data to the record over time. In fact, a Plant is really just

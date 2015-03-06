@@ -1,8 +1,8 @@
 (ns planted.db.core
   (:require [clojure.tools.logging :as log]
-            [com.stuartsierra.component :as component])
-  (:import [com.tinkerpop.blueprints.impls.orient OrientGraph]
-           [com.tinkerpop.blueprints.impls.orient OrientGraphFactory]))
+            [com.stuartsierra.component :as component]
+            [planted.db.schema :as schema])
+  (:import [com.tinkerpop.blueprints.impls.orient OrientGraphFactory OrientGraph OrientVertex]))
 
 (defn- reset-logging
   "OrientDB uses java.util.logging, which we need to redirect to slf4j.
@@ -54,6 +54,23 @@
            (finally
              (.shutdown ~graph-arg)))))))
 
+(defn- clean-keys
+  "Given a map which may have keys defined as keywords, ensures all such are
+  converted to strings."
+  [m]
+  (zipmap
+    (map name (keys m))
+    (vals m)))
+
+(deftx create [graph type props]
+  (log/info "Creating" type props)
+  (let [^OrientVertex v (.addVertex graph (str "class:" type))]
+    (.setProperties v (to-array (apply concat (clean-keys props))))
+    v))
+
+(deftx search [graph param value]
+  (into [] (.getVertices graph param value)))
+
 (defrecord Database [url admin-user admin-pwd db]
   component/Lifecycle
 
@@ -63,6 +80,7 @@
     (if db
       this
       (let [db (connect url admin-user admin-pwd)]
+        (schema/init-schema db schema/planted-schema)
         (assoc this :db db))))
 
   (stop [this]
