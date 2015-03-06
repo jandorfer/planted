@@ -6,18 +6,18 @@
             [planted.system :refer [planted]]))
 
 (deftest test-app
-  (let [system (component/start (planted config/env))]
+  (let [system (component/start (planted config/env))
+        db (get-in system [:db :db])]
 
     (testing "Create and use Plant type"
-      (let [db (get-in system :db :db)]
-        (dbs/create-plant-class db)
-        (dbs/create-plant db "Plant1" true)
-        (dbs/create-plant db "Plant2" true)
-        (dbs/create-plant db "Plant3" false)
-        (let [results-living (dbs/get-plants db "living" true)
-              results-dead (dbs/get-plants db "living" false)]
-          (is (= (count results-living) 2))
-          (is (= (count results-dead) 1))
-          (is (= (.getProperty (first results-dead) "title") "Plant3")))))
+      (dbs/create-plant-class db)
+      (dbs/create-plant db "Plant1" true)
+      (dbs/create-plant db "Plant2" true)
+      (dbs/create-plant db "Plant3" false)
+      (let [results-living (dbs/get-plants db "living" true)
+            results-dead (dbs/get-plants db "living" false)]
+        (is (= (count results-living) 2))
+        (is (= (count results-dead) 1))
+        (is (= (.getProperty (first results-dead) "title") "Plant3"))))
 
     (component/stop system)))
