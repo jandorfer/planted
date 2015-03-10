@@ -1,14 +1,21 @@
 (ns planted.webserver
   (:use [org.httpkit.server :only [run-server]])
-  (:require [clojure.tools.logging :as log]
+  (:require [cemerick.friend :as friend]
+            [clojure.tools.logging :as log]
             [com.stuartsierra.component :as component]
-            [compojure.core :refer [routes ANY POST GET]]
+            [compojure.core :refer [routes wrap-routes ANY POST GET]]
             [compojure.route :as route]
             [liberator.core :refer [resource defresource get-options]]
+            [ring.middleware.cookies :refer [wrap-cookies]]
             [ring.middleware.content-type :refer [wrap-content-type]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+            [ring.middleware.multipart-params :refer [wrap-multipart-params]]
+            [ring.middleware.nested-params :refer [wrap-nested-params]]
             [ring.middleware.not-modified :refer [wrap-not-modified]]
             [ring.middleware.params :refer [wrap-params]]
-            [ring.util.response :refer [content-type resource-response status]]))
+            [ring.middleware.session :refer [wrap-session]]
+            [ring.util.mime-type :as mime]
+            [ring.util.response :refer [content-type redirect resource-response response status]]))
 
 (defn log-request
   "Logs the request details, the start/end time and any exceptions"
@@ -24,9 +31,16 @@
         (log/error t "Unhandled throwable")
         (throw t)))))
 
-(def app-html "public/planted.html")
+(defn- serve-resource [path]
+  (let [response (resource-response path)]
+    (if-let [mime-type (mime/ext-mime-type path)]
+      (content-type response mime-type)
+      response)))
 
-(defn setup-web-server
+(defn- serve-app-html []
+  (serve-resource "public/planted.html"))
+
+(defn get-routes
   "Defines the Planted web server, which includes the REST web services and
   serving of static html/js files.
   The static assets should have been composed beforehand via grunt."
@@ -40,6 +54,21 @@
     ;; This call defaults to using "resources/public" folder as source
     (route/resources "/")
 
+    (GET "/session" request
+         (content-type (response (get-in request [:session] "nil")) "text/plain"))
+
+    (GET "/user" request
+         (let [userid (get-in request [:session :cemerick.friend/identity :current])]
+           (if userid
+             (content-type (response userid) "text/plain")
+             (status (redirect "/login") 403))))
+
+    ;; The friend authentication will fall through to here on success
+    (POST "/login" request (content-type (response (get-in request [:session :cemerick.friend/identity :current] "Unknown")) "text/plain"))
+
+    ;; Allow log-out (removes :cemerick.friend/identity from :session)
+    (friend/logout (ANY "/logout" request (ring.util.response/redirect "/")))
+
     ;; Planted is a single-page app. This means, whatever URL is actually
     ;; requested by the browser, we're always going to return the same
     ;; javascript app, which will internally detect the URL and render
@@ -48,42 +77,49 @@
     ;; The single page app itself can gracefully handle actual 404s.
 
     ;; TODO prerender the javascript app server side so we know for sure
-    (GET "/" [] (resource-response app-html))
-    (GET ["/:_" :_ #"(plant|site).*"] [_] (resource-response app-html))
+    (GET "/" [] (serve-app-html))
+    (GET "/login" [] (serve-app-html))
+    (GET ["/:_" :_ #"(plant|site).*"] [_] (serve-app-html))
 
     ;; Certain paths really should return 404 status, but still send along
     ;; the single page app; it can render the 404 message.
-    (route/not-found
-      (-> app-html
-          resource-response
-          (content-type "text/html")))))
+    (route/not-found (serve-app-html))))
 
 (defn wrap-web-server
   "Initializes the application web request handling and initializes some other
   ring request handlers to enhance it."
-  [db]
-  (-> (setup-web-server db)
-
-      ;; Ring middleware libraries to plug in some handy functionality
-      wrap-not-modified
-      wrap-content-type
-      wrap-params
+  [db auth-handler]
+  (-> (get-routes db)
 
       ;; Log everything that comes in
-      log-request))
+      log-request
+
+      ;; Authentication
+      auth-handler
+
+      ;; Ring middleware libraries to plug in some handy functionality
+      wrap-session
+      wrap-cookies
+      wrap-multipart-params
+      wrap-params
+      wrap-nested-params
+      wrap-keyword-params
+      wrap-not-modified
+      wrap-content-type))
 
 ;; See docstring for new-webserver below
-(defrecord WebServer [bind db shutdown-method]
+(defrecord WebServer [bind db auth shutdown-method]
   component/Lifecycle
 
   (start [this]
     (log/info "Starting Planted web server on" bind)
-    (if (not db)
-      (throw "Web server component requires 'db' dependency be specified."))
+    (if (not db) (throw (Exception. "Web server component requires missing 'db' dependency.")))
+    (if (not auth) (throw (Exception. "Web server component requires missing 'auth' dependency.")))
     (if shutdown-method
       this
       ;; The method returned from "run-server" shuts down the instance
-      (let [shutdown-method (run-server (wrap-web-server db) {:port bind})]
+      (let [routes (wrap-web-server db (:handler auth))
+            shutdown-method (run-server routes {:port bind})]
         (assoc this :shutdown-method shutdown-method))))
 
   (stop [this]

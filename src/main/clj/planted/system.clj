@@ -3,6 +3,7 @@
   (:require [clojure.tools.logging :as log]
             [com.stuartsierra.component :as component]
             [environ.core :as config]
+            [planted.auth :refer [new-authprovider]]
             [planted.db.core :refer [new-database]]
             [planted.webserver :refer [new-webserver]]))
 
@@ -14,9 +15,11 @@
     (log/info "Starting up Planted system...")
     (-> (component/system-map
           :db (new-database db-url db-admin-user db-admin-pwd)
+          :auth (new-authprovider config-options)
           :ws (new-webserver bind))
         (component/system-using
-          {:ws [:db]}))))
+          {:auth [:db]
+           :ws [:db :auth]}))))
 
 (defn -main [& args]
   (let [system (component/start (planted config/env))]
