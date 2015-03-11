@@ -7,6 +7,13 @@ performance and hopefully trace it back to some source based on the historical
 data you've accumulated. Unless the deer eat your stuff. Then there's no
 mystery to solve. Damn deer.
 
+## Project Status
+
+WARNING This application is still very much being developed, and won't yet do much for
+you should you want to actually use the end result. Check back soon!
+
+[See here for high level tasks](https://github.com/jandorfer/planted/wiki/TODO)
+
 ## Running
 
 To start a web server for the application, simply:
@@ -27,10 +34,10 @@ started, make sure you have node (npm at least) installed then:
     npm install
     gulp
 
-That will rebuild the html/js/css files served. It will also by default watch
-the source files, and rebuild as needed when you make changes. The web server
-will automatically serve whatever the latest on disk is, so this approach is
-fully compatible with any way you want to run the lein project.
+That will rebuild the html/js/css files served. If you `gulp dev` it will also 
+watch the source files, and rebuild as needed when you make changes. The web 
+server will automatically serve whatever the latest on disk is, so this approach 
+is fully compatible with any way you want to run the lein project.
 
 ### Lein
 
