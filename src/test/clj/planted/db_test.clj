@@ -24,6 +24,6 @@
         (is (= (count results-living) 2))
         (is (= (count results-dead) 1))
         (is (= (count results-type) 3))
-        (is (= (.getProperty (first results-dead) "title") "Plant3"))))
+        (is (= (:title (first results-dead)) "Plant3"))))
 
     (component/stop db-c)))

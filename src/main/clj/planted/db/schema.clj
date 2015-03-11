@@ -39,15 +39,20 @@
 ;; - health (0-10?)
 ;; Users can and are encouraged to make up their own properties.
 
+(def owned-v
+  {:name "Owned"
+   :parent "V"
+   :properties {:owner OType/STRING}})
+
 (def plant
   {:name "Plant"
-   :parent "V"
+   :parent (:name owned-v)
    :properties {:title OType/STRING
                 :planted OType/DATE
                 :living OType/BOOLEAN}})
 
 (def planted-schema
-  {:vertex-types [plant]})
+  {:vertex-types [owned-v plant]})
 
 ;; The other main thing to start are "Report"s for a given plant. This is how we
 ;; go about adding data to the record over time. In fact, a Plant is really just
