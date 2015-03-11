@@ -8,9 +8,22 @@
   [^OrientGraphFactory db type parent properties]
   (let [graph (.getNoTx db)]
     (if-let [existing-type (.getVertexType graph type)]
-      existing-type
+      existing-type                                         ;; TODO check/update existing type
       (do (log/info "Creating vertex type:" type)
           (let [otype (.createVertexType graph type parent)]
+            (doseq [[prop ptype] (seq properties)]
+              (log/debug type "- Creating property" prop "with data type" ptype)
+              (.createProperty otype (name prop) ptype)))
+          type))))
+
+(defn- init-edge-type
+  "Create a edge type definition in the database if not present."
+  [^OrientGraphFactory db type parent properties]
+  (let [graph (.getNoTx db)]
+    (if-let [existing-type (.getEdgeType graph type)]
+      existing-type                                         ;; TODO check/update existing type
+      (do (log/info "Creating edge type:" type)
+          (let [otype (.createEdgeType graph type parent)]
             (doseq [[prop ptype] (seq properties)]
               (log/debug type "- Creating property" prop "with data type" ptype)
               (.createProperty otype (name prop) ptype)))
@@ -25,7 +38,7 @@
     (doseq [{:keys [name parent properties]} vertex-types]
       (init-vertex-type db name parent properties))
     (doseq [{:keys [name parent properties]} edge-types]
-      (log/warn "TODO: Edges not implemented."))))
+      (init-edge-type db name parent properties))))
 
 ;; The Planted schema is designed around the Plant as the primary record, since
 ;; we are after all tracking plants. Since we're using a graph database
@@ -51,8 +64,33 @@
                 :planted OType/DATE
                 :living OType/BOOLEAN}})
 
+(def report
+  {:name "Report"
+   :parent (:name owned-v)
+   :properties {:title OType/STRING
+                :date OType/DATETIME
+                :updated OType/DATETIME
+                :content OType/STRING}})
+
+(def site
+  {:name "Site"
+   :parent (:name owned-v)
+   :properties {:title OType/STRING
+                :description OType/STRING}})
+
+(def update
+  {:name "update"
+   :parent "E"
+   :properties {}})
+
+(def includes
+  {:name "includes"
+   :parent "E"
+   :properties {}})
+
 (def planted-schema
-  {:vertex-types [owned-v plant]})
+  {:vertex-types [owned-v plant report site]
+   :edge-types [update includes]})
 
 ;; The other main thing to start are "Report"s for a given plant. This is how we
 ;; go about adding data to the record over time. In fact, a Plant is really just
