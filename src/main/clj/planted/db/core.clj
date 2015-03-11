@@ -1,15 +1,9 @@
 (ns planted.db.core
   (:require [clojure.tools.logging :as log]
             [com.stuartsierra.component :as component]
+            [planted.db.util :refer :all]
             [planted.db.schema :as schema])
-  (:import [com.tinkerpop.blueprints.impls.orient OrientGraphFactory OrientGraph OrientVertex]))
-
-(defn- reset-logging
-  "OrientDB uses java.util.logging, which we need to redirect to slf4j.
-  This method ensures the logging is properly reset."
-  []
-  (org.slf4j.bridge.SLF4JBridgeHandler/removeHandlersForRootLogger)
-  (org.slf4j.bridge.SLF4JBridgeHandler/install))
+  (:import [com.tinkerpop.blueprints.impls.orient OrientGraphFactory OrientGraph]))
 
 (defn- get-conn-factory
   "Gets a connection factory for the OrientDB database (graph mode).
@@ -32,55 +26,16 @@
 
     conn-factory))
 
-(defmacro deftx
-  "Writes a function with the given name which takes as its first argument an
-  instance of the OrientGraph to work with. Remaining arguments will be passed
-  through. The remaining actions (parameters 3+ to this macro) will comprise
-  the body of the function to execute against the graph, and said execution
-  will take place within the context of a transaction."
-  [name args & action]
-  (let [graph-arg (first args)
-        new-args (rest args)]
-    `(defn ~name
-       ~(vec (cons 'db-conn-factory new-args))
-       (let [~graph-arg (.getTx ~'db-conn-factory)]
-         (try
-           (let [result# (do ~@action)]
-             (.commit ~graph-arg)
-             result#)
-           (catch Throwable t#
-             (.rollback ~graph-arg)
-             (throw t#))
-           (finally
-             (.shutdown ~graph-arg)))))))
-
-(defn- clean-keys
-  "Given a map which may have keys defined as keywords, ensures all such are
-  converted to strings."
-  [m]
-  (zipmap
-    (map name (keys m))
-    (vals m)))
-
-(deftx create [graph type props]
-  (log/info "Creating" type props)
-  (let [^OrientVertex v (.addVertex graph (str "class:" type))]
-    (.setProperties v (to-array (apply concat (clean-keys props))))
-    v))
-
-(deftx search [graph param value]
-  (into [] (.getVertices graph param value)))
-
 (defrecord Database [url admin-user admin-pwd db]
   component/Lifecycle
 
   (start [this]
     (log/info "Connecting to Orient DB:" url)
-    (reset-logging)
+    (reset-logging-bridge)
     (if db
       this
       (let [db (connect url admin-user admin-pwd)]
-        (schema/init-schema db schema/planted-schema)
+        (schema/init-schema! db schema/planted-schema)
         (assoc this :db db))))
 
   (stop [this]

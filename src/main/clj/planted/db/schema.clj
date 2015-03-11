@@ -16,7 +16,7 @@
               (.createProperty otype (name prop) ptype)))
           type))))
 
-(defn init-schema
+(defn init-schema!
   "Takes a map of schema definitions, and ensures the indicated types exist in
   the database."
   [^OrientGraphFactory db schema]

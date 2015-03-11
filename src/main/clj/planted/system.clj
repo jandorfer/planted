@@ -8,7 +8,7 @@
             [planted.webserver :refer [new-webserver]]))
 
 (defn planted [config-options]
-  (let [db-url (get-in config-options [:db-url] "plocal:D:/temp/orientdb/dev")
+  (let [db-url (get-in config-options [:db-url] "memory:planteddb")
         db-admin-user (get-in config-options [:db-admin-user] nil)
         db-admin-pwd (get-in config-options [:db-admin-pwd] nil)
         bind (Integer. (get-in config-options [:bind] 8080))]
