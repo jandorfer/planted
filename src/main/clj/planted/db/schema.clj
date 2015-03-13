@@ -52,9 +52,14 @@
 ;; - health (0-10?)
 ;; Users can and are encouraged to make up their own properties.
 
+(def identifiable-v
+  {:name "Identifiable"
+   :parent "V"
+   :properties {:uuid OType/STRING}})
+
 (def owned-v
   {:name "Owned"
-   :parent "V"
+   :parent "Identifiable"
    :properties {:owner OType/STRING}})
 
 (def plant
@@ -89,7 +94,7 @@
    :properties {}})
 
 (def planted-schema
-  {:vertex-types [owned-v plant report site]
+  {:vertex-types [identifiable-v owned-v plant report site]
    :edge-types [update includes]})
 
 ;; The other main thing to start are "Report"s for a given plant. This is how we

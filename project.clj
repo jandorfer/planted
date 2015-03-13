@@ -7,6 +7,7 @@
   :repositories [["releases" "https://oss.sonatype.org/content/repositories/releases"] ;; Repos needed for orientdb
                  ["snapshots" "https://oss.sonatype.org/content/repositories/snapshots"]]
   :dependencies [[ch.qos.logback/logback-classic "1.1.2"]
+                 [cheshire "5.4.0"]
                  [compojure "1.3.2"]
                  [com.cemerick/friend "0.2.1"
                   ;; Newer version of these are in friend-oauth2

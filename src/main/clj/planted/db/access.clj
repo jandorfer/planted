@@ -44,12 +44,14 @@
   ([^OrientVertex v] (parse-vertex v 1))
   ([^OrientVertex v depth]
     (let [props (.getPropertyKeys v)
-          p-obj (zipmap (map keyword props) (map #(.getProperty v %) props))]
+          p-obj (zipmap (map keyword props) (map #(.getProperty v %) props))
+          p-obj (merge p-obj {:rid (.toString (.getId v))})]
       (if (> depth 0)
         (let [child-depth (- depth 1)
               raw-edges (.getEdges v Direction/IN nil)
               edges (map parse-edge raw-edges (repeat child-depth))]
-          (apply merge-with (concat [concat p-obj] edges)))))))
+          (apply merge-with (concat [concat p-obj] edges)))
+        p-obj))))
 
 (deftx create!
   "Creates a new Vertex of the given type, with the given properties. Note
@@ -60,6 +62,15 @@
   (let [^OrientVertex v (.addVertex graph (str "class:" type))]
     (.setProperties v (to-array (apply concat (clean-keys props))))
     v))
+
+(deftx update!
+  "Updates a given vertex's properties."
+  [graph rid props]
+  (log/info "Updating vertex" (:rid props))
+  (let [^OrientVertex vert (.getVertex graph rid)]
+    (doseq [[k v] (map identity (clean-keys props))]
+      (.setProperty vert k v))
+    vert))
 
 (deftx link!
   "Given two vertices, adds an edge linking them (OUT of second, IN to the
@@ -72,10 +83,10 @@
 (deftx get-v
   "Retrieves the vertex with the given ID. Vertex type must match or inherit
   the given class name. Incoming edges are fetched to the given depth."
-  [graph class id depth]
-  (log/info "Fetching" class id)
+  [graph type id depth]
+  (log/info "Fetching" type id)
   (when-let [vertex (.getVertex graph id)]
-    (if (type-extends? (.getType vertex) class)
+    (if (type-extends? (.getType vertex) type)
       (parse-vertex vertex depth))))
 
 (deftx browse
