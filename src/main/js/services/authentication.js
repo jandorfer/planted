@@ -14,7 +14,7 @@ AuthActions.check.listen(function() {
         });
 });
 
-AuthActions.login.listen(function(id, pwd) {
+AuthActions.login.listen(function(id, pwd, cb) {
     request
         .post('/login')
         .send('username=' + id)
@@ -25,6 +25,7 @@ AuthActions.login.listen(function(id, pwd) {
             } else {
                 // On success username is returned (that's the res.text value)
                 AuthActions.loginSuccess(res.text);
+                if (cb) { cb(res.text); }
             }
         });
 });

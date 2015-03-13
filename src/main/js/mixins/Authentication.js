@@ -1,15 +1,14 @@
-var auth = require('../services/authentication');
+var auth = require('../data/session');
 
 var Authentication = {
     statics: {
         willTransitionTo: function (transition) {
-            var nextPath = transition.path;
-            if (!auth.loggedIn()) {
+            if (!auth.isLoggedIn()) {
                 transition.redirect(
-                    '/login',
-                    {},
-                    {'nextPath' : nextPath});
+                    '/account', {}, {'nextPath': transition.path});
             }
         }
     }
 };
+
+module.exports = Authentication;

@@ -79,7 +79,11 @@ var LoginLogout = React.createClass({
         event.preventDefault();
         var user = this.refs.user.getDOMNode().value;
         var pwd = this.refs.pwd.getDOMNode().value;
-        actions.login(user, pwd);
+        actions.login(user, pwd, function() {
+            if (this.getQuery().nextPath) {
+                this.replaceWith(this.getQuery().nextPath);
+            }
+        }.bind(this));
     },
 
     handleErrorDismiss: function () {

@@ -16,6 +16,7 @@ var NotFoundRoute = Router.NotFoundRoute;
 
 // Load services
 require('./services/authentication');
+require('./services/plantedApi');
 
 var App = React.createClass({
     render: function () {
