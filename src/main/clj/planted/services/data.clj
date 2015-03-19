@@ -20,14 +20,20 @@
   (->> data
        (set-uuid)
        (set-owner owner)
-       (db/create! (:db db) "plant")))
+       (db/create! (:db db) "plant")
+       (.getId)
+       (.toString)
+       (get-plant db)))
 
 (defn- update-plant!
   "Use create-report! to make updates to plants."
   [db data]
-  (let [prev (get-plant db (:rid data) 0)
-        updated (merge prev data)]
-    (db/update! (:db db) (:rid data) updated)))
+  (let [prev (get-plant db (:rid data) 0)]
+    (->> (merge prev data)
+         (db/update! (:db db) (:rid data))
+         (.getId)
+         (.toString)
+         (get-plant db))))
 
 (defn create-report!
   [db owner data]
