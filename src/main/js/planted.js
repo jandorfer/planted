@@ -7,6 +7,11 @@ var About = require('./about.jsx');
 var Account = require('./account.jsx');
 var NotFound = require('./notfound.jsx');
 
+var PlantsLayout = require('./plants/layout.jsx');
+var NewPlant = require('./plants/createPlant.jsx');
+var ViewPlant = require('./plants/details.jsx');
+var PlantSummary = require('./plants/summary.jsx');
+
 var Router = require('react-router');
 var DefaultRoute = Router.DefaultRoute;
 var Link = Router.Link;
@@ -32,7 +37,11 @@ var App = React.createClass({
 var routes = (
     <Route name="app" path="/" handler={App}>
         <DefaultRoute handler={Landing}/>
-        <Route name="dash" path="/" handler={Landing}/>
+        <Route name="plants" path="/plants" handler={PlantsLayout}>
+            <Route name="new" path="new" handler={NewPlant}/>
+            <Route name="plant" path=":plantId" handler={ViewPlant}/>
+            <DefaultRoute handler={PlantSummary} />
+        </Route>
         <Route name="about" path="/about" handler={About}/>
         <Route name="account" path="/account" handler={Account}/>
         <NotFoundRoute handler={NotFound}/>

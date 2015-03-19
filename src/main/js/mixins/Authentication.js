@@ -5,7 +5,7 @@ var Authentication = {
         willTransitionTo: function (transition) {
             if (!auth.isLoggedIn()) {
                 transition.redirect(
-                    '/account', {}, {'nextPath': transition.path});
+                    '/account', {}, {'nextPath': encodeURIComponent(transition.path)});
             }
         }
     }

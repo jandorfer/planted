@@ -16,9 +16,14 @@ var LoginLogout = React.createClass({
              Router.State,
              Reflux.listenTo(session, "onSessionUpdated"),
              Reflux.listenTo(actions.login, "onLoginStart"),
+             Reflux.listenTo(actions.loginSuccess, "onLoginSuccess"),
              Reflux.listenTo(actions.loginFail, "onLoginFail")],
 
     getInitialState: function () {
+        if (session.isLoggedIn()) {
+            this.onLoginSuccess();
+        }
+
         return {
             auth: session.isLoggedIn(),
             loading: false,
@@ -79,11 +84,7 @@ var LoginLogout = React.createClass({
         event.preventDefault();
         var user = this.refs.user.getDOMNode().value;
         var pwd = this.refs.pwd.getDOMNode().value;
-        actions.login(user, pwd, function() {
-            if (this.getQuery().nextPath) {
-                this.replaceWith(this.getQuery().nextPath);
-            }
-        }.bind(this));
+        actions.login(user, pwd);
     },
 
     handleErrorDismiss: function () {
@@ -104,6 +105,12 @@ var LoginLogout = React.createClass({
             loading: true,
             error: false
         });
+    },
+
+    onLoginSuccess: function() {
+         if (this.getQuery().nextPath) {
+             this.replaceWith(this.getQuery().nextPath);
+         }
     },
 
     onLoginFail: function(message) {

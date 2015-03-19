@@ -1,0 +1,12 @@
+.tile-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+}
+
+.tile {
+    width: 50%;
+    flex: 0 0 auto;
+}

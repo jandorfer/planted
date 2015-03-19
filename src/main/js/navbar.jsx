@@ -16,7 +16,7 @@ module.exports = React.createClass({
         return (
             <NavBar brand="Planted." fixedTop toggleNavKey={0}>
                 <Nav right eventKey={0}>
-                    <NavItemLink eventKey={1} to="dash">Get Started</NavItemLink>
+                    <NavItemLink eventKey={1} to="plants">My Plants</NavItemLink>
                     <NavItemLink eventKey={2} to="about">About</NavItemLink>
                     <LoginLink />
                     <LoginInline />

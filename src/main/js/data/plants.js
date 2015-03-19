@@ -8,6 +8,7 @@ var PlantStore = Reflux.createStore({
     init: function() {
         this.listenTo(API.getPlantsSuccess, this.getPlantsSuccess);
         this.listenTo(API.getPlantsFailure, this.getPlantsFailure);
+        this.listenTo(API.createPlantSuccess, this.plantCreated);
 
         this.data = Immutable.List([]);
         API.getPlants();
@@ -18,8 +19,8 @@ var PlantStore = Reflux.createStore({
     },
 
     setData: function(data) {
-        this.data = Immutable.List(data);
-        this.trigger(this.data.toArray());
+        this.data = Immutable.List.isList(data) ? data : Immutable.List(data);
+        this.trigger(this.data);
     },
 
     // ACTION HANDLING
@@ -32,10 +33,18 @@ var PlantStore = Reflux.createStore({
         this.setData([]);
     },
 
+    plantCreated: function(plant) {
+        this.setData(this.data.push(plant));
+    },
+
     // API
 
     getPlants: function() {
-        return this.data.toArray();
+        return this.data;
+    },
+
+    getPlant: function(id) {
+        return this.data.find(function(value) {return value.rid === id;});
     }
 });
 
