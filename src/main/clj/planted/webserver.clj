@@ -6,6 +6,7 @@
             [compojure.core :refer [routes wrap-routes ANY POST GET]]
             [compojure.route :as route]
             [liberator.core :refer [resource defresource get-options]]
+            [liberator.dev :refer [wrap-trace]]
             [planted.api :refer [get-api-routes]]
             [ring.middleware.cookies :refer [wrap-cookies]]
             [ring.middleware.content-type :refer [wrap-content-type]]
@@ -97,6 +98,9 @@
 
       ;; Log everything that comes in
       log-request
+
+      ;; Debug logging for API
+      (wrap-trace :header :ui)
 
       ;; Authentication
       auth-handler
